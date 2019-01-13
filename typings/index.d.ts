@@ -59,5 +59,5 @@ declare module 'websub' {
     public on(event: 'feed', listener: (data: FeedEvent) => void): this
   }
 
-  export default WebSub
+  export = WebSub
 }
