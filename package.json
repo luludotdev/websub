@@ -1,0 +1,28 @@
+{
+  "name": "websub",
+  "version": "0.1.0",
+  "description": "Basic WebSub subscriber module.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "eslint --color src/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/lolPants/websub.git"
+  },
+  "keywords": [
+    "websub",
+    "subscriber",
+    "webhook",
+    "webhooks",
+    "pubsub",
+    "pubsubhubbub",
+    "client"
+  ],
+  "author": "Jack Baron <jackmbaron@gmail.com> (https://www.jackbaron.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lolPants/websub/issues"
+  },
+  "homepage": "https://github.com/lolPants/websub#readme"
+}
