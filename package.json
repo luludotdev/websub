@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/lolPants/websub/issues"
   },
-  "homepage": "https://github.com/lolPants/websub#readme"
+  "homepage": "https://github.com/lolPants/websub#readme",
+  "devDependencies": {
+    "eslint": "^5.12.0"
+  }
 }
