@@ -118,7 +118,7 @@ class WebSub extends EventEmitter {
    * @returns {Promise.<{ secret: string, callbackURL: string }>}
    */
   subscribe (topic, hub) {
-    return this._setSubscription('subscribe', hub, topic)
+    return this._setSubscription('subscribe', topic, hub)
   }
 
   /**
@@ -128,7 +128,7 @@ class WebSub extends EventEmitter {
    * @returns {Promise.<{ secret: string, callbackURL: string }>}
    */
   unsubscribe (topic, hub) {
-    return this._setSubscription('unsubscribe', hub, topic)
+    return this._setSubscription('unsubscribe', topic, hub)
   }
 
   /**
