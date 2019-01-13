@@ -100,7 +100,7 @@ class WebSub extends EventEmitter {
 
       if (resp.status !== 202 && resp.status !== 204) {
         const err = new Error(`Invalid response status ${resp.status}`)
-        err.body = await resp.body.text()
+        err.body = await resp.text()
 
         return this.emit('denied', { topic, err })
       }
