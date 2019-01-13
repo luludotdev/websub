@@ -8,8 +8,8 @@ class WebSub extends EventEmitter {
   /**
    * Create a new WebSub Server
    * @param {Object} [options] Server Options
-   * @param {string} [options.callbackURL] Callback URL
-   * @param {string} [options.secret] Secret value for HMAC signatures
+   * @param {string} options.callbackURL Callback URL
+   * @param {string} options.secret Secret value for HMAC signatures
    */
   constructor (options) {
     super()

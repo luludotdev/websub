@@ -1,6 +1,6 @@
 {
   "name": "websub",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Basic WebSub subscriber module.",
   "main": "src/index.js",
   "scripts": {
@@ -25,6 +25,7 @@
     "url": "https://github.com/lolPants/websub/issues"
   },
   "homepage": "https://github.com/lolPants/websub#readme",
+  "types": "./typings/index.d.ts",
   "devDependencies": {
     "eslint": "^5.12.0"
   },
