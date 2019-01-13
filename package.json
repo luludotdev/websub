@@ -27,5 +27,8 @@
   "homepage": "https://github.com/lolPants/websub#readme",
   "devDependencies": {
     "eslint": "^5.12.0"
+  },
+  "dependencies": {
+    "node-fetch": "^2.3.0"
   }
 }
