@@ -12,7 +12,25 @@ declare module 'websub' {
     callbackURL: string
   }
 
-  export class WebSub extends EventEmitter {
+  export interface DeniedEvent {
+    topic: string
+    err: Error
+  }
+
+  export interface SubscribeEvent {
+    lease: number
+    topic: string
+    hub: string
+  }
+
+  export interface FeedEvent {
+    topic: string
+    hub: string
+    body: string
+    headers: http.IncomingHttpHeaders
+  }
+
+  class WebSub extends EventEmitter {
     constructor (options?: WebSubOptions)
 
     public callbackURL: string
@@ -36,14 +54,10 @@ declare module 'websub' {
 
     public on(event: 'listening', listener: () => void): this
     public on(event: 'error', listener: (err: Error) => void): this
-    public on(event: 'denied', listener: (topic: string, err: Error) => void): this
-    public on(event: 'subscribe' | 'unsubscribe', listener: (lease: number, topic: string, hub: string) => void): this
-    public on(event: 'feed', listener: (topic: string, hub: string, body: string, headers: http.IncomingHttpHeaders) => void): this
-
-    public once(event: 'listening', listener: () => void): this
-    public once(event: 'error', listener: (err: Error) => void): this
-    public once(event: 'denied', listener: (topic: string, err: Error) => void): this
-    public once(event: 'subscribe' | 'unsubscribe', listener: (lease: number, topic: string, hub: string) => void): this
-    public once(event: 'feed', listener: (topic: string, hub: string, body: string, headers: http.IncomingHttpHeaders) => void): this
+    public on(event: 'denied', listener: (data: DeniedEvent) => void): this
+    public on(event: 'subscribe' | 'unsubscribe', listener: (data: SubscribeEvent) => void): this
+    public on(event: 'feed', listener: (data: FeedEvent) => void): this
   }
+
+  export default WebSub
 }
