@@ -34,19 +34,34 @@ class WebSub extends EventEmitter {
   }
 
   /**
-   * @param {number} [port] Port
-   * @param {string} [hostname] Hostname
-   * @param {number} [backlog] Server Backlog
-   * @param {Function} [listeningListener] Listing Listener
+   * Create a new WebSub Server
+   * @param {Object} [options] Server Options
+   * @param {string} options.callbackURL Callback URL
+   * @param {string} options.secret Secret value for HMAC signatures
+   * @returns {WebSub}
    */
-  listen (port, hostname, backlog, listeningListener) {
-    this.port = port
+  static createServer (options) {
+    return new WebSub(options)
+  }
 
+  /**
+   * @returns {this}
+   */
+  listen (...args) {
     this.server = http.createServer((req, res) => this._onRequest(req, res))
     this.server.on('listening', () => this.emit('listening'))
     this.server.on('error', err => this._onError(err))
 
-    this.server.listen(port, hostname, backlog, listeningListener)
+    this.server.listen(...args)
+    return this
+  }
+
+  /**
+   * @returns {number}
+   */
+  get port () {
+    if (!this.server) return undefined
+    return this.server.address().port
   }
 
   /**

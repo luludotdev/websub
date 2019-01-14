@@ -32,13 +32,22 @@ declare module 'websub' {
 
   class WebSub extends EventEmitter {
     constructor (options?: WebSubOptions)
+    public static createServer(options?: WebSubOptions): WebSub
 
     public callbackURL: string
     public secret: string
     public server: http.Server
-    public port: number
+    readonly port: number
 
-    public listen(port?: number, hostname?: string, backlog?: number, listeningListener?: Function): void
+    public listen(port?: number, hostname?: string, backlog?: number, listeningListener?: Function): this
+    public listen(port?: number, hostname?: string, listeningListener?: Function): this
+    public listen(port?: number, backlog?: number, listeningListener?: Function): this
+    public listen(port?: number, listeningListener?: Function): this
+    public listen(path: string, backlog?: number, listeningListener?: Function): this
+    public listen(path: string, listeningListener?: Function): this
+    public listen(options: ListenOptions, listeningListener?: Function): this
+    public listen(handle: any, backlog?: number, listeningListener?: Function): this
+    public listen(handle: any, listeningListener?: Function): this
 
     private _createKey(topic: string): string
     private _setSubscription(mode: 'subscribe' | 'unsubscribe', topic: string, hub: string): Promise<SubscriptionCallback>
