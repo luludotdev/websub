@@ -16,9 +16,15 @@ class WebSub extends EventEmitter {
 
     const opts = options || {}
 
+    /**
+     * @type {string}
+     */
     this.secret = opts.secret
     if (!this.secret) throw new Error('options.secret cannot be blank!')
 
+    /**
+     * @type {string}
+     */
     this.callbackURL = opts.callbackURL
     if (!this.callbackURL) throw new Error('options.callbackURL cannot be blank!')
 
@@ -26,11 +32,6 @@ class WebSub extends EventEmitter {
      * @type {http.Server}
      */
     this.server = undefined
-
-    /**
-     * @type {number}
-     */
-    this.port = undefined
   }
 
   /**
