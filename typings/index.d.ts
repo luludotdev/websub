@@ -2,28 +2,28 @@ declare module 'websub' {
   import http from 'http'
   import { EventEmitter } from 'events'
 
-  export interface WebSubOptions {
+  type WebSubOptions = {
     callbackURL: string
     secret: string
   }
 
-  export interface SubscriptionCallback {
+  type SubscriptionCallback = {
     secret: string
     callbackURL: string
   }
 
-  export interface DeniedEvent {
+  type DeniedEvent = {
     topic: string
     err: Error
   }
 
-  export interface SubscribeEvent {
+  type SubscribeEvent = {
     lease: number
     topic: string
     hub: string
   }
 
-  export interface FeedEvent {
+  type FeedEvent = {
     topic: string
     hub: string
     body: string
@@ -57,6 +57,12 @@ declare module 'websub' {
     public on(event: 'denied', listener: (data: DeniedEvent) => void): this
     public on(event: 'subscribe' | 'unsubscribe', listener: (data: SubscribeEvent) => void): this
     public on(event: 'feed', listener: (data: FeedEvent) => void): this
+
+    public once(event: 'listening', listener: () => void): this
+    public once(event: 'error', listener: (err: Error) => void): this
+    public once(event: 'denied', listener: (data: DeniedEvent) => void): this
+    public once(event: 'subscribe' | 'unsubscribe', listener: (data: SubscribeEvent) => void): this
+    public once(event: 'feed', listener: (data: FeedEvent) => void): this
   }
 
   export = WebSub
