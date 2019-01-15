@@ -1,5 +1,5 @@
 declare module 'websub' {
-  import http from 'http'
+  import * as http from 'http'
   import { EventEmitter } from 'events'
 
   type WebSubOptions = {
@@ -45,7 +45,6 @@ declare module 'websub' {
     public listen(port?: number, listeningListener?: Function): this
     public listen(path: string, backlog?: number, listeningListener?: Function): this
     public listen(path: string, listeningListener?: Function): this
-    public listen(options: ListenOptions, listeningListener?: Function): this
     public listen(handle: any, backlog?: number, listeningListener?: Function): this
     public listen(handle: any, listeningListener?: Function): this
 
