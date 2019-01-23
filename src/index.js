@@ -90,9 +90,10 @@ class WebSub extends EventEmitter {
    * @param {('subscribe'|'unsubscribe')} mode Either `subscribe` or `unsubscribe`
    * @param {string} topic Topic URL
    * @param {string} hub Hub URL
+   * @param {number} [leaseSeconds] Lease Seconds
    * @returns {Promise.<{ secret: string, callbackURL: string }>}
    */
-  async _setSubscription (mode, topic, hub) {
+  async _setSubscription (mode, topic, hub, leaseSeconds) {
     if (!(mode === 'subscribe' || mode === 'unsubscribe')) throw new Error('Mode must be either subscribe or unsubscribe')
 
     if (typeof topic !== 'string') throw new Error('Topic must be a string')
@@ -113,6 +114,11 @@ class WebSub extends EventEmitter {
     form.set('hub.topic', topic)
     form.set('hub.secret', secret)
     form.set('hub.callback', callbackURL)
+
+    if (mode === 'subscribe' && leaseSeconds) {
+      if (Number.isNaN(leaseSeconds)) throw new Error('Lease Seconds must be a number')
+      else form.set('hub.lease_seconds', leaseSeconds)
+    }
 
     try {
       const resp = await fetch(hub, {
@@ -138,10 +144,11 @@ class WebSub extends EventEmitter {
    * Subscribe to a topic
    * @param {string} topic Topic URL
    * @param {string} hub Hub URL
+   * @param {number} [leaseSeconds] Lease Seconds
    * @returns {Promise.<{ secret: string, callbackURL: string }>}
    */
-  subscribe (topic, hub) {
-    return this._setSubscription('subscribe', topic, hub)
+  subscribe (topic, hub, leaseSeconds) {
+    return this._setSubscription('subscribe', topic, hub, leaseSeconds)
   }
 
   /**

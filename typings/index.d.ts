@@ -50,9 +50,9 @@ declare module 'websub' {
     public listen(handle: any, listeningListener?: Function): this
 
     private _createKey(topic: string): string
-    private _setSubscription(mode: 'subscribe' | 'unsubscribe', topic: string, hub: string): Promise<SubscriptionCallback>
+    private _setSubscription(mode: 'subscribe' | 'unsubscribe', topic: string, hub: string, leaseSeconds?: number): Promise<SubscriptionCallback>
 
-    public subscribe(topic: string, hub: string): Promise<SubscriptionCallback>
+    public subscribe(topic: string, hub: string, leaseSeconds?: number): Promise<SubscriptionCallback>
     public unsubscribe(topic: string, hub: string): Promise<SubscriptionCallback>
 
     private _onRequest(req: http.IncomingMessage, res: http.ServerResponse): void
