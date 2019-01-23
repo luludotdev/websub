@@ -10,6 +10,7 @@ class WebSub extends EventEmitter {
    * @param {Object} [options] Server Options
    * @param {string} options.callbackURL Callback URL
    * @param {string} options.secret Secret value for HMAC signatures
+   * @param {any} [options.headers] Headers to include on requests
    */
   constructor (options) {
     super()
@@ -27,6 +28,11 @@ class WebSub extends EventEmitter {
      */
     this.callbackURL = opts.callbackURL
     if (!this.callbackURL) throw new Error('options.callbackURL cannot be blank!')
+
+    /**
+     * @type {any}
+     */
+    this.headers = opts.headers || {}
 
     /**
      * @type {http.Server}
@@ -112,6 +118,7 @@ class WebSub extends EventEmitter {
       const resp = await fetch(hub, {
         method: 'POST',
         body: form,
+        headers: this.headers,
       })
 
       if (resp.status !== 202 && resp.status !== 204) {

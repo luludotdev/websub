@@ -5,6 +5,7 @@ declare module 'websub' {
   type WebSubOptions = {
     callbackURL: string
     secret: string
+    headers?: any
   }
 
   type SubscriptionCallback = {
