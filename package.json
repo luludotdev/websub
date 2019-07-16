@@ -1,15 +1,29 @@
 {
   "name": "websub",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Basic WebSub subscriber module.",
-  "main": "src/index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "directories": {
+    "lib": "lib"
+  },
+  "files": [
+    "lib/**/*"
+  ],
   "scripts": {
-    "test": "eslint --color src/"
+    "prepublishOnly": "yarn run test && yarn run build",
+    "test": "yarn run check && yarn run lint",
+    "check": "yarn run build --noEmit",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "prebuild": "rimraf lib",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "yarn run watch  --sourceMap"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/lolPants/websub.git"
+  "engines": {
+    "node": ">=8.0.0"
   },
+  "repository": "git@github.com:lolPants/websub.git",
   "keywords": [
     "websub",
     "subscriber",
@@ -21,16 +35,18 @@
   ],
   "author": "Jack Baron <jackmbaron@gmail.com> (https://www.jackbaron.com)",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/lolPants/websub/issues"
-  },
-  "homepage": "https://github.com/lolPants/websub#readme",
-  "types": "./typings/index.d.ts",
   "devDependencies": {
-    "@types/node": "^10.12.18",
-    "eslint": "^5.12.0"
+    "@types/node": "^12.6.3",
+    "@types/node-fetch": "^2.3.7",
+    "prettier": "^1.18.2",
+    "rimraf": "^2.6.3",
+    "tslint": "^5.18.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.5.3"
   },
   "dependencies": {
-    "node-fetch": "^2.3.0"
+    "eventemitter3": "^4.0.0",
+    "node-fetch": "^2.6.0"
   }
 }
