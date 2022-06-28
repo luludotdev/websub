@@ -1,52 +1,42 @@
 {
   "name": "websub",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Basic WebSub subscriber module.",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "directories": {
-    "lib": "lib"
+  "packageManager": "yarn@3.2.1",
+  "type": "module",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
   },
+  "sideEffects": false,
   "files": [
     "lib/**/*"
   ],
   "scripts": {
-    "prepublishOnly": "yarn run test && yarn run build",
+    "prepack": "yarn run build",
+    "prepublish": "yarn run test",
     "test": "yarn run check && yarn run lint",
-    "check": "yarn run build --noEmit",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "prebuild": "rimraf lib",
-    "build": "tsc",
-    "watch": "tsc --watch",
-    "dev": "yarn run watch  --sourceMap"
+    "check": "yarn run compile --noEmit",
+    "lint": "xo ./src",
+    "clean": "rimraf lib",
+    "compile": "tsc",
+    "build": "yarn run clean && yarn run compile",
+    "dev": "yarn run clean && yarn run compile --watch"
   },
+  "repository": "git@github.com:lolPants/env.git",
+  "author": "Jack Baron <jackmbaron@gmail.com>",
+  "license": "MIT",
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=16"
   },
-  "repository": "git@github.com:lolPants/websub.git",
-  "keywords": [
-    "websub",
-    "subscriber",
-    "webhook",
-    "webhooks",
-    "pubsub",
-    "pubsubhubbub",
-    "client"
-  ],
-  "author": "Jack Baron <jackmbaron@gmail.com> (https://www.jackbaron.com)",
-  "license": "ISC",
   "devDependencies": {
-    "@types/node": "^12.6.3",
-    "@types/node-fetch": "^2.3.7",
-    "prettier": "^1.18.2",
-    "rimraf": "^2.6.3",
-    "tslint": "^5.18.0",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.5.3"
-  },
-  "dependencies": {
-    "eventemitter3": "^4.0.0",
-    "node-fetch": "^2.6.0"
+    "@types/node": "^18.0.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.7.4",
+    "xo": "^0.50.0"
   }
 }
