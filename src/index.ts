@@ -1,108 +1,108 @@
-import { createHmac } from 'crypto'
-import { EventEmitter } from 'eventemitter3'
-import { createServer, IncomingMessage, Server, ServerResponse } from 'http'
-import fetch, { HeadersInit } from 'node-fetch'
-import { parse as parseURL, URLSearchParams } from 'url'
+import { s } from '@sapphire/shapeshift'
+import { parseLinkHeader } from '@web3-storage/parse-link-header'
+import axios from 'axios'
+import * as cheerio from 'cheerio'
+import EventEmitter from 'eventemitter3'
+import { ReasonPhrases, StatusCodes } from 'http-status-codes'
+import { Buffer } from 'node:buffer'
+import { createHmac } from 'node:crypto'
 import {
-  IDeniedEvent,
-  IError,
-  IFeedEvent,
-  IOptions,
-  ISubscribeEvent,
-} from './types'
+  createServer,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from 'node:http'
+import { parse as parseURL, URLSearchParams } from 'node:url'
 
-// tslint:disable-next-line: interface-name
-export interface WebSub {
-  on(event: 'listening', listener: () => void): this
-  on(event: 'error', listener: (err: Error) => void): this
-  on(event: 'denied', listener: (data: IDeniedEvent) => void): this
-  on(event: 'feed', listener: (data: IFeedEvent) => void): this
-  on(
-    event: 'subscribe' | 'unsubscribe',
-    listener: (data: ISubscribeEvent) => void
-  ): this
+interface Events {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  listening: []
+  error: [error: Error]
+  denied: [hub: string, topic: string]
 
-  once(event: 'listening', listener: () => void): this
-  once(event: 'error', listener: (err: Error) => void): this
-  once(event: 'denied', listener: (data: IDeniedEvent) => void): this
-  once(event: 'feed', listener: (data: IFeedEvent) => void): this
-  once(
-    event: 'subscribe' | 'unsubscribe',
-    listener: (data: ISubscribeEvent) => void
-  ): this
+  subscribe: [hub: string, topic: string, leaseSeconds: number]
+  unsubscribe: [hub: string, topic: string]
+
+  feed: [hub: string, topic: string, body: string]
 }
 
-export class WebSub extends EventEmitter {
-  public get port() {
-    if (!this.server) return undefined
+export interface Options {
+  callbackURL: string
+  secret: string
+}
 
-    const address = this.server.address()
-    if (!address) return undefined
-    if (typeof address === 'string') return undefined
-
-    return address.port
-  }
-
-  public static createServer(options?: IOptions) {
-    return new WebSub(options)
-  }
-
-  private secret: string
-  private callbackURL: string
-  private headers: HeadersInit
+export class WebSub extends EventEmitter<Events> {
+  private readonly callbackURL: string
+  private readonly secret: string
   private server: Server | undefined
 
-  constructor(options?: IOptions) {
+  constructor(options: Options) {
     super()
-    const opts: Partial<IOptions> = options || {}
 
-    if (!opts.secret) throw new Error('options.secret cannot be blank!')
-    if (!opts.callbackURL) {
-      throw new Error('options.callbackURL cannot be blank!')
+    this.callbackURL = s.string.url().parse(options.callbackURL)
+    this.secret = s.string.lengthGreaterThan(0).parse(options.secret)
+  }
+
+  public get listen() {
+    if (this.server === undefined) {
+      this.server = createServer(async (request, response) =>
+        this._handleRequest(request, response)
+      )
+
+      this.server.on('listening', () => this.emit('listening'))
+      this.server.on('error', error => this.emit('error', error))
     }
 
-    this.secret = opts.secret
-    this.callbackURL = opts.callbackURL
-    this.headers = opts.headers || {}
-    this.server = undefined
+    return this.server.listen.bind(this.server)
   }
 
-  public listen(
-    port?: number,
-    hostname?: string,
-    backlog?: number,
-    listeningListener?: () => any
-  ): this
-  public listen(
-    port?: number,
-    hostname?: string,
-    listeningListener?: () => any
-  ): this
-  public listen(port?: number, listeningListener?: () => any): this
-  public listen(
-    path: string,
-    backlog?: number,
-    listeningListener?: () => any
-  ): this
-  public listen(path: string, listeningListener?: () => any): this
-  public listen(...args: any[]): this {
-    this.server = createServer((req, res) => this._onRequest(req, res))
-    this.server.on('listening', () => this.emit('listening'))
-    this.server.on('error', err => this._onError(err))
-
-    this.server.listen(...args)
-    return this
+  public async subscribe(url: string, leaseSeconds?: number) {
+    const { hub, topic } = await this._discover(url)
+    return this._handleSubscribe('subscribe', hub, topic, leaseSeconds)
   }
 
-  public subscribe(topic: string, hub: string, leaseSeconds?: number) {
-    return this._setSubscription('subscribe', topic, hub, leaseSeconds)
+  public async unsubscribe(url: string) {
+    const { hub, topic } = await this._discover(url)
+    if (!hub) return this._handleSubscribe('unsubscribe', hub, topic)
   }
 
-  public unsubscribe(topic: string, hub: string) {
-    return this._setSubscription('unsubscribe', topic, hub)
+  private async _discover(
+    url: string
+  ): Promise<{ hub: string; topic: string }> {
+    const resp = await axios.get(url)
+
+    const links = parseLinkHeader(resp.headers.link)
+    if (links?.hub.url) {
+      const hub = links.hub.url
+      const topic = links.self.url ?? url
+
+      return { hub, topic }
+    }
+
+    const contentType = resp.headers['content-type']
+    const isHTML = contentType.startsWith('text/html')
+    const isXML = contentType.startsWith('text/xml')
+
+    if (isHTML || isXML) {
+      const $ = cheerio.load(resp.data, { xml: isXML })
+
+      const hub = $('link[rel="hub"]').eq(0).attr('href')
+      if (hub) {
+        const topic = $('link[rel="self"]').eq(0).attr('href') ?? url
+        return { hub, topic }
+      }
+
+      const atomHub = $('atom\\:link[rel="hub"]').eq(0).attr('href')
+      if (atomHub) {
+        const topic = $('atom\\:link[rel="self"]').eq(0).attr('href') ?? url
+        return { hub: atomHub, topic }
+      }
+    }
+
+    throw new Error('Failed to discover hub!')
   }
 
-  private _createKey(topic: string) {
+  private _hmacKey(topic: string): string {
     const secret = createHmac('sha1', this.secret)
       .update(topic, 'utf8')
       .digest('hex')
@@ -110,208 +110,237 @@ export class WebSub extends EventEmitter {
     return secret
   }
 
-  private async _setSubscription(
+  private async _handleSubscribe(
     mode: 'subscribe' | 'unsubscribe',
-    topic: string,
-    hub: string,
-    leaseSeconds?: number
+    rawHub: string,
+    rawTopic: string,
+    rawLeaseSeconds = 0
   ) {
-    if (!(mode === 'subscribe' || mode === 'unsubscribe')) {
-      throw new Error('Mode must be either subscribe or unsubscribe')
+    if (this.server === undefined) {
+      throw new Error('you must call .listen() before (un)subscribing')
     }
 
-    if (typeof topic !== 'string') throw new Error('Topic must be a string')
-    if (!topic) throw new Error('Topic is required')
+    const hub = s.string.url().parse(rawHub)
+    const topic = s.string.lengthGreaterThan(0).parse(rawTopic)
+    const leaseSeconds = s.number.parse(rawLeaseSeconds)
 
-    if (typeof hub !== 'string') throw new Error('Hub must be a string')
-    if (!hub) throw new Error('Hub is required')
+    const parameters = new URLSearchParams()
+    parameters.set('topic', topic)
+    parameters.set('hub', hub)
 
-    const callbackParams = new URLSearchParams()
-    callbackParams.set('topic', topic)
-    callbackParams.set('hub', hub)
-    const callbackURL = `${this.callbackURL}?${callbackParams}`
-
-    const secret = this._createKey(topic)
+    const secret = this._hmacKey(topic)
     const form = new URLSearchParams()
+
+    const query = parameters.toString()
+    const callbackURL = `${this.callbackURL}?${query}`
+
     form.set('hub.verify', 'async')
     form.set('hub.mode', mode)
     form.set('hub.topic', topic)
     form.set('hub.secret', secret)
     form.set('hub.callback', callbackURL)
-
-    if (mode === 'subscribe' && leaseSeconds) {
-      if (Number.isNaN(leaseSeconds)) {
-        throw new Error('Lease Seconds must be a number')
-      } else form.set('hub.lease_seconds', `${leaseSeconds}`)
+    if (mode === 'subscribe') {
+      form.set('hub.lease_seconds', leaseSeconds.toString())
     }
 
+    await axios.post(hub, form)
+  }
+
+  private async _handleRequest(
+    request: IncomingMessage,
+    response: ServerResponse
+  ): Promise<void> {
     try {
-      const resp = await fetch(hub, {
-        body: form,
-        headers: this.headers,
-        method: 'POST',
-      })
+      switch (request.method) {
+        case 'GET': {
+          await this._handleGET(request, response)
+          return
+        }
 
-      if (resp.status !== 202 && resp.status !== 204) {
-        const err: IError = new Error(`Invalid response status ${resp.status}`)
-        err.body = await resp.text()
+        case 'POST': {
+          await this._handlePOST(request, response)
+          return
+        }
 
-        return this.emit('denied', { topic, err })
+        default: {
+          response.writeHead(StatusCodes.METHOD_NOT_ALLOWED)
+          response.write(ReasonPhrases.METHOD_NOT_ALLOWED)
+
+          response.end()
+          break
+        }
       }
-
-      return { secret, callbackURL }
-    } catch (err) {
-      return this.emit('denied', { topic, err })
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.emit('error', error)
+      }
     }
   }
 
-  private _onRequest(req: IncomingMessage, res: ServerResponse) {
-    switch (req.method) {
-      case 'GET':
-        return this._handleGetRequest(req, res)
-
-      case 'POST':
-        return this._handlePostRequest(req, res)
-
-      default:
-        res.writeHead(405)
-        res.write('Method Not Allowed')
-        return res.end()
-    }
-  }
-
-  private _onError(err: IError) {
-    if (err.syscall === 'listen') {
-      err.message = `Failed to start listening on port ${this.port} (${err.code})`
-      return this.emit('error', err)
-    }
-
-    return this.emit('error', err)
-  }
-
-  private _handleGetRequest(req: IncomingMessage, res: ServerResponse) {
-    if (!req.url) {
-      res.writeHead(400)
-      res.write('Bad Request')
-      return res.end()
-    }
-    const { query: params } = parseURL(req.url, true, true)
-
-    // Invalid Request
-    if (!params['hub.topic'] || !params['hub.mode']) {
-      res.writeHead(400)
-      res.write('Bad Request')
-      return res.end()
-    }
-
-    switch (params['hub.mode']) {
-      case 'denied':
-        res.writeHead(200)
-        res.write(params['hub.challenge'] || 'OK')
-
-        return this.emit('denied', {
-          hub: params.hub,
-          topic: params['hub.topic'],
-        })
-
-      case 'subscribe':
-      case 'unsubscribe':
-        res.writeHead(200)
-        res.write(params['hub.challenge'])
-        res.end()
-
-        const hubMode = params['hub.mode']
-        const mode = Array.isArray(hubMode) ? hubMode[0] : hubMode
-
-        return this.emit(mode, {
-          hub: params.hub,
-          lease:
-            Number(params['hub.lease_seconds'] || 0) +
-            Math.round(Date.now() / 1000),
-          topic: params['hub.topic'],
-        })
-
-      default:
-        res.writeHead(403)
-        res.write('Forbidden')
-        return res.end()
-    }
-  }
-
-  private _parseBody(
-    req: IncomingMessage,
+  private async _parseBody(
+    request: IncomingMessage,
     key: string,
-    algo: string,
+    algorithm: string,
     signature: string
-  ): Promise<readonly [string, boolean]> {
+  ): Promise<{ body: string; valid: boolean }> {
     return new Promise((resolve, reject) => {
       const chunks: any[] = []
-      const hmac = createHmac(algo.toLowerCase(), key)
+      const hmac = createHmac(algorithm.toLowerCase(), key)
 
-      req.on('error', err => reject(err))
-      req.on('data', chunk => chunks.push(chunk))
+      request.on('error', error => reject(error))
+      request.on('data', chunk => chunks.push(chunk))
 
-      req.on('end', () => {
+      request.on('end', () => {
         const body = Buffer.concat(chunks).toString()
         const digest = hmac.update(body, 'utf8').digest('hex')
 
         const valid = digest.toLowerCase() === signature.toLowerCase()
-        return resolve([body, valid])
+        resolve({ body, valid })
       })
     })
   }
 
-  private async _handlePostRequest(req: IncomingMessage, res: ServerResponse) {
-    if (!req.url) {
-      res.writeHead(400)
-      res.write('Bad Request')
-      return res.end()
+  private async _handleGET(
+    request: IncomingMessage,
+    resp: ServerResponse
+  ): Promise<void> {
+    if (!request.url) {
+      resp.writeHead(StatusCodes.BAD_REQUEST)
+      resp.write(ReasonPhrases.BAD_REQUEST)
+
+      resp.end()
+      return
     }
 
-    const { query: params } = parseURL(req.url, true, true)
+    const { query } = parseURL(request.url, true, true)
+    const hub = Array.isArray(query.hub) ? query.hub[0] : query.hub
+    const topic = Array.isArray(query['hub.topic'])
+      ? query['hub.topic'][0]
+      : query['hub.topic']
 
-    if (!req.headers['x-hub-signature']) {
-      res.writeHead(403)
-      res.write('Forbidden')
-      return res.end()
+    const mode = Array.isArray(query['hub.mode'])
+      ? query['hub.mode'][0]
+      : query['hub.mode']
+
+    const challenge = Array.isArray(query['hub.challenge'])
+      ? query['hub.challenge'][0]
+      : query['hub.challenge']
+
+    if (!hub || !topic || !mode) {
+      resp.writeHead(StatusCodes.BAD_REQUEST)
+      resp.write(ReasonPhrases.BAD_REQUEST)
+
+      resp.end()
+      return
     }
 
-    const topic = Array.isArray(params.topic) ? params.topic[0] : params.topic
-    const secret = this._createKey(topic)
+    switch (mode) {
+      case 'denied': {
+        resp.writeHead(StatusCodes.OK)
+        resp.write(challenge ?? 'OK')
+        resp.end()
 
-    const xHubSignature = req.headers['x-hub-signature']
-    const hubSig = Array.isArray(xHubSignature)
-      ? xHubSignature[0]
-      : xHubSignature
+        this.emit('denied', hub, topic)
+        return
+      }
 
-    if (!hubSig) {
-      res.writeHead(202)
-      res.write('Accepted')
-      return res.end()
+      case 'subscribe':
+      case 'unsubscribe': {
+        resp.writeHead(StatusCodes.OK)
+        resp.write(challenge ?? 'OK')
+        resp.end()
+
+        if (mode === 'subscribe') {
+          const lease = Array.isArray(query['hub.lease_seconds'])
+            ? query['hub.lease_seconds'][0]
+            : query['hub.lease_seconds']
+
+          const leaseSeconds = Number.parseInt(lease ?? '0', 10)
+          this.emit('subscribe', hub, topic, leaseSeconds)
+        } else {
+          this.emit('unsubscribe', hub, topic)
+        }
+
+        return
+      }
+
+      default: {
+        resp.writeHead(StatusCodes.FORBIDDEN)
+        resp.write(ReasonPhrases.FORBIDDEN)
+
+        resp.end()
+        break
+      }
+    }
+  }
+
+  private async _handlePOST(
+    request: IncomingMessage,
+    resp: ServerResponse
+  ): Promise<void> {
+    if (!request.url) {
+      resp.writeHead(StatusCodes.BAD_REQUEST)
+      resp.write(ReasonPhrases.BAD_REQUEST)
+
+      resp.end()
+      return
     }
 
-    const [algo, signature] = hubSig.split('=')
-    const [body, valid] = await this._parseBody(
-      req,
+    if (!request.headers['x-hub-signature']) {
+      resp.writeHead(StatusCodes.FORBIDDEN)
+      resp.write(ReasonPhrases.FORBIDDEN)
+
+      resp.end()
+      return
+    }
+
+    const { query } = parseURL(request.url, true, true)
+    const hub = Array.isArray(query.hub) ? query.hub[0] : query.hub
+    const topic = Array.isArray(query.topic) ? query.topic[0] : query.topic
+
+    if (!hub || !topic) {
+      resp.writeHead(StatusCodes.BAD_REQUEST)
+      resp.write(ReasonPhrases.BAD_REQUEST)
+
+      resp.end()
+      return
+    }
+
+    const sigHeader = request.headers['x-hub-signature'] as
+      | string
+      | string[]
+      | undefined
+
+    const signature = Array.isArray(sigHeader) ? sigHeader[0] : sigHeader
+    if (!signature) {
+      resp.writeHead(StatusCodes.ACCEPTED)
+      resp.write(ReasonPhrases.ACCEPTED)
+
+      resp.end()
+      return
+    }
+
+    const [algorithm, sig] = signature.split('=')
+    const secret = this._hmacKey(topic)
+
+    const { body, valid } = await this._parseBody(
+      request,
       secret,
-      algo || '',
-      signature || ''
+      algorithm,
+      sig
     )
 
     if (!valid) {
-      res.writeHead(202)
-      res.write('Accepted')
-      return res.end()
+      resp.writeHead(StatusCodes.ACCEPTED)
+      resp.write(ReasonPhrases.ACCEPTED)
+
+      resp.end()
+      return
     }
 
-    res.writeHead(204)
-    res.end()
+    resp.writeHead(StatusCodes.NO_CONTENT)
+    resp.end()
 
-    return this.emit('feed', {
-      body,
-      headers: req.headers,
-      hub: params.hub,
-      topic: params.topic,
-    })
+    this.emit('feed', hub, topic, body)
   }
 }
