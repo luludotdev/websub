@@ -1,9 +1,3 @@
-import { s } from '@sapphire/shapeshift'
-import { parseLinkHeader } from '@web3-storage/parse-link-header'
-import axios from 'axios'
-import * as cheerio from 'cheerio'
-import EventEmitter from 'eventemitter3'
-import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import { Buffer } from 'node:buffer'
 import { createHmac } from 'node:crypto'
 import {
@@ -13,9 +7,14 @@ import {
   type ServerResponse,
 } from 'node:http'
 import { parse as parseURL, URLSearchParams } from 'node:url'
+import { s } from '@sapphire/shapeshift'
+import { parseLinkHeader } from '@web3-storage/parse-link-header'
+import axios from 'axios'
+import * as cheerio from 'cheerio'
+import EventEmitter from 'eventemitter3'
+import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 
 interface Events {
-  // eslint-disable-next-line @typescript-eslint/ban-types
   listening: []
   error: [error: Error]
   denied: [hub: string, topic: string]
@@ -36,7 +35,7 @@ export class WebSub extends EventEmitter<Events> {
   private readonly secret: string
   private server: Server | undefined
 
-  constructor(options: Options) {
+  public constructor(options: Options) {
     super()
 
     this.callbackURL = s.string.url().parse(options.callbackURL)
@@ -46,7 +45,7 @@ export class WebSub extends EventEmitter<Events> {
   public get listen() {
     if (this.server === undefined) {
       this.server = createServer(async (request, response) =>
-        this._handleRequest(request, response)
+        this._handleRequest(request, response),
       )
 
       this.server.on('listening', () => this.emit('listening'))
@@ -67,7 +66,7 @@ export class WebSub extends EventEmitter<Events> {
   }
 
   private async _discover(
-    url: string
+    url: string,
   ): Promise<{ hub: string; topic: string }> {
     const resp = await axios.get(url)
 
@@ -103,18 +102,14 @@ export class WebSub extends EventEmitter<Events> {
   }
 
   private _hmacKey(topic: string): string {
-    const secret = createHmac('sha1', this.secret)
-      .update(topic, 'utf8')
-      .digest('hex')
-
-    return secret
+    return createHmac('sha1', this.secret).update(topic, 'utf8').digest('hex')
   }
 
   private async _handleSubscribe(
     mode: 'subscribe' | 'unsubscribe',
     rawHub: string,
     rawTopic: string,
-    rawLeaseSeconds = 0
+    rawLeaseSeconds = 0,
   ) {
     if (this.server === undefined) {
       throw new Error('you must call .listen() before (un)subscribing')
@@ -148,7 +143,7 @@ export class WebSub extends EventEmitter<Events> {
 
   private async _handleRequest(
     request: IncomingMessage,
-    response: ServerResponse
+    response: ServerResponse,
   ): Promise<void> {
     try {
       switch (request.method) {
@@ -181,7 +176,7 @@ export class WebSub extends EventEmitter<Events> {
     request: IncomingMessage,
     key: string,
     algorithm: string,
-    signature: string
+    signature: string,
   ): Promise<{ body: string; valid: boolean }> {
     return new Promise((resolve, reject) => {
       const chunks: any[] = []
@@ -202,7 +197,7 @@ export class WebSub extends EventEmitter<Events> {
 
   private async _handleGET(
     request: IncomingMessage,
-    resp: ServerResponse
+    resp: ServerResponse,
   ): Promise<void> {
     if (!request.url) {
       resp.writeHead(StatusCodes.BAD_REQUEST)
@@ -276,7 +271,7 @@ export class WebSub extends EventEmitter<Events> {
 
   private async _handlePOST(
     request: IncomingMessage,
-    resp: ServerResponse
+    resp: ServerResponse,
   ): Promise<void> {
     if (!request.url) {
       resp.writeHead(StatusCodes.BAD_REQUEST)
@@ -307,8 +302,8 @@ export class WebSub extends EventEmitter<Events> {
     }
 
     const sigHeader = request.headers['x-hub-signature'] as
-      | string
       | string[]
+      | string
       | undefined
 
     const signature = Array.isArray(sigHeader) ? sigHeader[0] : sigHeader
@@ -327,7 +322,7 @@ export class WebSub extends EventEmitter<Events> {
       request,
       secret,
       algorithm,
-      sig
+      sig,
     )
 
     if (!valid) {
