@@ -26,7 +26,16 @@ interface Events {
 }
 
 export interface Options {
+  /**
+   * HTTP Callback URL
+   *
+   * Must be accessible on the public internet!
+   */
   callbackURL: string
+
+  /**
+   * HMAC Secret
+   */
   secret: string
 }
 
@@ -42,6 +51,9 @@ export class WebSub extends EventEmitter<Events> {
     this.secret = s.string.lengthGreaterThan(0).parse(options.secret)
   }
 
+  /**
+   * Start a server listening for connections
+   */
   public get listen() {
     if (this.server === undefined) {
       this.server = createServer(async (request, response) =>
