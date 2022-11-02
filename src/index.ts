@@ -55,13 +55,30 @@ export class WebSub extends EventEmitter<Events> {
     return this.server.listen.bind(this.server)
   }
 
-  public async subscribe(url: string, leaseSeconds?: number) {
-    const { hub, topic } = await this._discover(url)
+  /**
+   * Subscribe to a topic
+   *
+   * @param url - URL to subscribe to
+   * @param leaseSeconds - Subscription lease seconds [default: 0]
+   * @param force - Whether to override the topic to the given URL
+   */
+  public async subscribe(url: string, leaseSeconds?: number, force = false) {
+    const { hub, topic: discoverTopic } = await this._discover(url)
+    const topic = force ? url : discoverTopic
+
     return this._handleSubscribe('subscribe', hub, topic, leaseSeconds)
   }
 
-  public async unsubscribe(url: string) {
-    const { hub, topic } = await this._discover(url)
+  /**
+   * Unsubscribe from a topic
+   *
+   * @param url - URL to unsubscribe from
+   * @param force - Whether to override the topic to the given URL
+   */
+  public async unsubscribe(url: string, force = false) {
+    const { hub, topic: discoverTopic } = await this._discover(url)
+    const topic = force ? url : discoverTopic
+
     if (!hub) return this._handleSubscribe('unsubscribe', hub, topic)
   }
 
@@ -109,7 +126,7 @@ export class WebSub extends EventEmitter<Events> {
     mode: 'subscribe' | 'unsubscribe',
     rawHub: string,
     rawTopic: string,
-    rawLeaseSeconds = 0,
+    rawLeaseSeconds?: number,
   ) {
     if (this.server === undefined) {
       throw new Error('you must call .listen() before (un)subscribing')
@@ -117,7 +134,7 @@ export class WebSub extends EventEmitter<Events> {
 
     const hub = s.string.url().parse(rawHub)
     const topic = s.string.lengthGreaterThan(0).parse(rawTopic)
-    const leaseSeconds = s.number.parse(rawLeaseSeconds)
+    const leaseSeconds = s.number.or(s.undefined).parse(rawLeaseSeconds)
 
     const parameters = new URLSearchParams()
     parameters.set('topic', topic)
@@ -135,7 +152,8 @@ export class WebSub extends EventEmitter<Events> {
     form.set('hub.secret', secret)
     form.set('hub.callback', callbackURL)
     if (mode === 'subscribe') {
-      form.set('hub.lease_seconds', leaseSeconds.toString())
+      const value = leaseSeconds?.toString() ?? ''
+      form.set('hub.lease_seconds', value)
     }
 
     await axios.post(hub, form)
