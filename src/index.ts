@@ -71,16 +71,16 @@ export class WebSub extends EventEmitter<Events> {
     const resp = await axios.get(url)
 
     const links = parseLinkHeader(resp.headers.link)
-    if (links?.hub.url) {
+    if (links?.hub?.url) {
       const hub = links.hub.url
-      const topic = links.self.url ?? url
+      const topic = links.self?.url ?? url
 
       return { hub, topic }
     }
 
     const contentType = resp.headers['content-type']
-    const isHTML = contentType.startsWith('text/html')
-    const isXML = contentType.startsWith('text/xml')
+    const isHTML = contentType?.startsWith('text/html') ?? false
+    const isXML = contentType?.startsWith('text/xml') ?? false
 
     if (isHTML || isXML) {
       const $ = cheerio.load(resp.data, { xml: isXML })
@@ -179,7 +179,7 @@ export class WebSub extends EventEmitter<Events> {
     signature: string,
   ): Promise<{ body: string; valid: boolean }> {
     return new Promise((resolve, reject) => {
-      const chunks: any[] = []
+      const chunks: Buffer[] = []
       const hmac = createHmac(algorithm.toLowerCase(), key)
 
       request.on('error', error => reject(error))
@@ -315,8 +315,15 @@ export class WebSub extends EventEmitter<Events> {
       return
     }
 
-    const [algorithm, sig] = signature.split('=')
     const secret = this._hmacKey(topic)
+    const [algorithm, sig] = signature.split('=')
+    if (!algorithm || !sig) {
+      resp.writeHead(StatusCodes.FORBIDDEN)
+      resp.write(ReasonPhrases.FORBIDDEN)
+
+      resp.end()
+      return
+    }
 
     const { body, valid } = await this._parseBody(
       request,
