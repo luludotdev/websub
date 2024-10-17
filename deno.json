@@ -4,7 +4,7 @@
   "exports": {
     ".": "./mod.ts",
     "./events": "./events.ts",
-    "./server": "./server.ts"
+    "./subscriber": "./subscriber.ts"
   },
   "tasks": {},
   "license": "MIT",

@@ -16,8 +16,8 @@ import {
   UnsubscribeEvent,
 } from "./events.ts";
 
-/** Options to pass to {@link WebSub} classes. */
-export interface WebSubOptions {
+/** Options to pass to {@link Subscriber} classes. */
+export interface SubscriberOptions {
   /**
    * Publicly accessible URL this WebSub subscriber can be reached at.
    *
@@ -25,6 +25,9 @@ export interface WebSubOptions {
    */
   publicUrl: string | URL;
 
+  /**
+   * Cryptographically secure secret key.
+   */
   secret: string;
 }
 
@@ -38,7 +41,7 @@ type WebSubEvents = {
 /**
  * WebSub Subscriber server.
  */
-export class WebSub extends TypedEventTarget<WebSubEvents> {
+export class Subscriber extends TypedEventTarget<WebSubEvents> {
   #publicUrl: URL;
   #secret: string;
 
@@ -48,7 +51,7 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
   /**
    * Create a new WebSub subscriber.
    */
-  public constructor(options: WebSubOptions) {
+  public constructor(options: SubscriberOptions) {
     super();
 
     this.#publicUrl = new URL(options.publicUrl);

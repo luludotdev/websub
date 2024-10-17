@@ -1,15 +1,15 @@
 /**
- * This module contains events emitted by the {@link WebSub} class.
+ * This module contains events emitted by the {@link Subscriber} class.
  *
  * @module
  */
 
 // used for documentation links
 // deno-lint-ignore no-unused-vars
-import type { WebSub } from "./server.ts";
+import type { Subscriber } from "./subscriber.ts";
 
 /**
- * Event emitted by the {@link WebSub} class when a subscribe request is accepted.
+ * Event emitted by the {@link Subscriber} class when a subscribe request is accepted.
  */
 export class SubscribeEvent extends Event {
   /** WebSub Hub URL. */
@@ -35,7 +35,7 @@ export class SubscribeEvent extends Event {
 }
 
 /**
- * Event emitted by the {@link WebSub} class when an unsubscribe request is accepted.
+ * Event emitted by the {@link Subscriber} class when an unsubscribe request is accepted.
  */
 export class UnsubscribeEvent extends Event {
   /** WebSub Hub URL. */
@@ -56,7 +56,7 @@ export class UnsubscribeEvent extends Event {
 }
 
 /**
- * Event emitted by the {@link WebSub} class when a subscribe request is denied.
+ * Event emitted by the {@link Subscriber} class when a subscribe request is denied.
  */
 export class DeniedEvent extends Event {
   /** WebSub Hub URL. */
@@ -77,7 +77,7 @@ export class DeniedEvent extends Event {
 }
 
 /**
- * Event emitted by the {@link WebSub} class when a new notification payload is delivered.
+ * Event emitted by the {@link Subscriber} class when a new notification payload is delivered.
  */
 export class FeedEvent extends Event {
   /** WebSub Hub URL */

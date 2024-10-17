@@ -26,4 +26,4 @@
  */
 
 export * from "./events.ts";
-export * from "./server.ts";
+export * from "./subscriber.ts";
