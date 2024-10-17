@@ -1,0 +1,38 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@derzade/typescript-event-target@^1.1.1": "1.1.1",
+    "jsr:@hugoalh/http-header-link@^1.0.2": "1.0.2",
+    "jsr:@hugoalh/is-string-singleline@1.0.2": "1.0.2",
+    "jsr:@std/encoding@^1.0.5": "1.0.5",
+    "jsr:@std/http@^1.0.8": "1.0.8"
+  },
+  "jsr": {
+    "@derzade/typescript-event-target@1.1.1": {
+      "integrity": "853c4cb91c333923534faf02fe68f2a91050dc41732a6899fb67ccee204f7dc7"
+    },
+    "@hugoalh/http-header-link@1.0.2": {
+      "integrity": "1f607e34ac0790a0b0759f89ade294ab3a1d211e46a8dea337eaafa26950205f",
+      "dependencies": [
+        "jsr:@hugoalh/is-string-singleline"
+      ]
+    },
+    "@hugoalh/is-string-singleline@1.0.2": {
+      "integrity": "f79dc9930bd89f3534db2efc93293fde5af81648dacbb87afd921cd6a163c9bd"
+    },
+    "@std/encoding@1.0.5": {
+      "integrity": "ecf363d4fc25bd85bd915ff6733a7e79b67e0e7806334af15f4645c569fefc04"
+    },
+    "@std/http@1.0.8": {
+      "integrity": "6ea1b2e8d33929967754a3b6d6c6f399ad6647d7bbb5a466c1eaf9b294a6ebcd"
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@derzade/typescript-event-target@^1.1.1",
+      "jsr:@hugoalh/http-header-link@^1.0.2",
+      "jsr:@std/encoding@^1.0.5",
+      "jsr:@std/http@^1.0.8"
+    ]
+  }
+}

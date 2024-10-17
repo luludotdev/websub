@@ -1,23 +1,20 @@
-name: Node.js CI
+name: CI
 on: [push, pull_request]
 
 jobs:
   test:
     if: contains(github.ref, 'refs/tags/') == false
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x]
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
         with:
-          cache: yarn
-          node-version: ${{ matrix.node-version }}
-      - name: Install packages
-        run: yarn install --immutable
-      - name: Test
-        run: yarn run test
+          deno-version: v2.x
+      - name: Run checks
+        run: deno check mod.ts
+      - name: Lint codebase
+        run: deno lint
+      - name: Check formatting
+        run: deno fmt --check

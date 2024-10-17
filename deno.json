@@ -1,0 +1,17 @@
+{
+  "name": "@lulu/websub",
+  "version": "0.8.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./events": "./events.ts",
+    "./server": "./server.ts"
+  },
+  "tasks": {},
+  "license": "MIT",
+  "imports": {
+    "@derzade/typescript-event-target": "jsr:@derzade/typescript-event-target@^1.1.1",
+    "@hugoalh/http-header-link": "jsr:@hugoalh/http-header-link@^1.0.2",
+    "@std/encoding": "jsr:@std/encoding@^1.0.5",
+    "@std/http": "jsr:@std/http@^1.0.8"
+  }
+}

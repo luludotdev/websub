@@ -1,25 +1,20 @@
-name: Node.js Publish
+name: Publish
 on:
   release:
     types: [published]
 
-env:
-  NODE_VERSION: 16.x
-
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
         with:
-          cache: yarn
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install packages
-        run: yarn install --immutable
-      - name: Publish to NPM
-        run: yarn npm publish
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          deno-version: v2.x
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Publish to JSR
+        run: deno publish
