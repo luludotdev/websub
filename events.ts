@@ -1,12 +1,12 @@
+/**
+ * This module contains events emitted by the {@link WebSub} class.
+ *
+ * @module
+ */
+
 // used for documentation links
 // deno-lint-ignore no-unused-vars
 import type { WebSub } from "./server.ts";
-
-/**
- * @module
- *
- * This module contains events emitted by the {@link WebSub} class.
- */
 
 /**
  * Event emitted by the {@link WebSub} class when a subscribe request is accepted.

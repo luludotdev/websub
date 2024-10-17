@@ -1,6 +1,7 @@
 /**
- * @module
+ * [WebSub](https://www.w3.org/TR/websub/) subscriber server for TypeScript.
  *
+ * @example
  * ```ts
  * import { WebSub } from "@lulu/websub";
  * import { encodeHex } from "@std/encoding/hex";
@@ -20,6 +21,8 @@
  *  },
  * }, (req) => websub.handler(req));
  * ```
+ *
+ * @module
  */
 
 export * from "./events.ts";

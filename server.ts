@@ -1,7 +1,7 @@
 /**
- * @module
- *
  * This module contains the WebSub subscriber server class and related types.
+ *
+ * @module
  */
 
 import { TypedEventTarget } from "@derzade/typescript-event-target";
