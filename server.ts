@@ -1,3 +1,9 @@
+/**
+ * @module
+ *
+ * This module contains the WebSub subscriber server class and related types.
+ */
+
 import { TypedEventTarget } from "@derzade/typescript-event-target";
 import { HTTPHeaderLink } from "@hugoalh/http-header-link";
 import { encodeHex } from "@std/encoding/hex";
@@ -10,7 +16,17 @@ import {
   UnsubscribeEvent,
 } from "./events.ts";
 
-export type WebSubOptions = { publicUrl: string | URL; secret: string };
+/** Options to pass to {@link WebSub} classes. */
+export interface WebSubOptions {
+  /**
+   * Publicly accessible URL this WebSub subscriber can be reached at.
+   *
+   * **Required for webhooks to function.**
+   */
+  publicUrl: string | URL;
+
+  secret: string;
+}
 
 type WebSubEvents = {
   subscribe: SubscribeEvent;
@@ -19,6 +35,9 @@ type WebSubEvents = {
   feed: FeedEvent;
 };
 
+/**
+ * WebSub Subscriber server.
+ */
 export class WebSub extends TypedEventTarget<WebSubEvents> {
   #publicUrl: URL;
   #secret: string;
@@ -26,6 +45,9 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
   #pending = new Set<string>();
   #active = new Set<string>();
 
+  /**
+   * Create a new WebSub subscriber.
+   */
   public constructor(options: WebSubOptions) {
     super();
 
@@ -33,6 +55,11 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
     this.#secret = options.secret;
   }
 
+  /**
+   * Subscribe to a topic at the given URL.
+   * @param url Topic URL.
+   * @param options Subscribe options.
+   */
   public async subscribe(
     url: string,
     options: { lease?: number; force?: boolean } = {},
@@ -41,7 +68,7 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
     const topic = options.force ? url : _topic;
 
     this.#pending.add(topic);
-    await this.#renameme({
+    await this.#requestSubscription({
       mode: "subscribe",
       hub,
       topic,
@@ -49,6 +76,11 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
     });
   }
 
+  /**
+   * Unsubscribe from a topic at the given URL.
+   * @param url Topic URL.
+   * @param options Unsubscribe options.
+   */
   public async unsubscribe(
     url: string,
     options: { force?: boolean } = {},
@@ -57,7 +89,7 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
     const topic = options.force ? url : _topic;
 
     this.#pending.delete(topic);
-    await this.#renameme({
+    await this.#requestSubscription({
       mode: "unsubscribe",
       hub,
       topic,
@@ -88,7 +120,7 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
     throw new Error("not implemented");
   }
 
-  async #renameme({
+  async #requestSubscription({
     mode,
     hub,
     topic,
@@ -124,6 +156,12 @@ export class WebSub extends TypedEventTarget<WebSubEvents> {
     });
   }
 
+  /**
+   * HTTP server handler method.
+   *
+   * @param req HTTP Request.
+   * @returns HTTP Response.
+   */
   public async handler(req: Request): Promise<Response> {
     if (req.method === "GET") {
       const url = new URL(req.url);
