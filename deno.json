@@ -13,5 +13,8 @@
     "@hugoalh/http-header-link": "jsr:@hugoalh/http-header-link@^1.0.2",
     "@std/encoding": "jsr:@std/encoding@^1.0.5",
     "@std/http": "jsr:@std/http@^1.0.8"
+  },
+  "publish": {
+    "exclude": [".github", ".vscode"]
   }
 }
